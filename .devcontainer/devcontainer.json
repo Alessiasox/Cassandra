@@ -1,0 +1,20 @@
+{
+    "name": "Python Dev Container",
+    "dockerFile": "Dockerfile",
+    "context": ".",
+    "remoteUser": "root",
+    // or "devuser" if you created that user in the Dockerfile
+  
+    // Forward any ports you might need (for example, 8501 for Streamlit)
+    "forwardPorts": [8501],
+  
+    // Run commands after container is created (e.g. re-install if needed, set up pre-commit hooks, etc.)
+    "postCreateCommand": "pip install --no-cache-dir -r requirements.txt",
+  
+    // List of extensions you might want (like Python, Pylance, etc.)
+    "extensions": [
+      "ms-python.python",
+      "ms-python.isort",
+      "ms-python.black-formatter"
+    ]
+  }
