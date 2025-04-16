@@ -26,7 +26,7 @@ jobs:
         pip install flake8 pytest
 
     - name: Run tests
-      run: make test
+      run: pytest --maxfail=1 --disable-warnings -q
 
     - name: Run flake8
-      run: make check
+      run: flake8 .
