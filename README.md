@@ -56,7 +56,7 @@ make show
 Note: If port 8501 is already used, change the port mapping in the Makefile.
 
 --------------------------------------------
-THEORETICAL AI INTEGRATION
+AI INTEGRATION
 --------------------------------------------
 
 In the final version, AI will perform continuous inference on new WAV files.
