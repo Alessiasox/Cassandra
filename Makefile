@@ -25,7 +25,7 @@ test:
 	docker run --rm \
 		-v $(PWD):/app \
 		-w /app \
-		-e PYTHONPATH=/app \
+		-e PYTHONPATH=/app/src \
 		$(IMAGE_NAME) \
 		pytest --maxfail=1 --disable-warnings -q
 
@@ -43,5 +43,6 @@ show: build
 		-v $(PWD):/app \
 		-w /app \
 		-p 8501:8501 \
+		-e PYTHONPATH=/app/src \
 		$(IMAGE_NAME) \
-		streamlit run viewer.py
+		streamlit run src/UI/viewer.py

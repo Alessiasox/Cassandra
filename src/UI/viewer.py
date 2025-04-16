@@ -10,7 +10,7 @@ from scipy.io import wavfile
 from PIL import Image
 
 from parser.index_local import index_local_images
-from viewer_utils import generate_timeline, closest_match
+from UI.viewer_utils import generate_timeline, closest_match
 
 
 # ───────── Page config ─────────

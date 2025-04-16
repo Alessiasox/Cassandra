@@ -1,10 +1,12 @@
 # .devcontainer/Dockerfile
 FROM python:3.10-slim
 
+ENV PYTHONPATH=/app
+
 # For non-interactive apt installs
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install any system packages you might need (e.g. build-essential, git)
+# Install any system packages needed (e.g. build-essential, git)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     git \
@@ -20,7 +22,7 @@ WORKDIR /app
 COPY requirements.txt /app
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of your source code
+# Copy the rest of source code
 COPY . /app
 
 # By default, just drop into a shell.
