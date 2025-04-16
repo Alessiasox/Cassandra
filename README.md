@@ -15,11 +15,11 @@ It provides a modern interface to:
 PROJECT STRUCTURE
 --------------------------------------------
 
-parser/           -> Filename parsers and file managers  
-tests/            -> Unit tests for parsing and indexing logic  
-UI/               -> Streamlit-based interactive user interface  
-requirements.txt  -> Python dependencies  
-Makefile          -> Developer commands using Docker  
+- parser/           -> Filename parsers and file managers  
+- tests/            -> Unit tests for parsing and indexing logic  
+- UI/               -> Streamlit-based interactive user interface  
+- requirements.txt  -> Python dependencies  
+- Makefile          -> Developer commands using Docker  
 
 --------------------------------------------
 HOW TO RUN
@@ -27,18 +27,31 @@ HOW TO RUN
 
 You can build and run the project using Docker and the Makefile.
 
-1. Build the development container:
-    $ make build
+1. **Build the development container**  
+```bash
+make build
+```
 
-2. Run the application:
-    $ make dev
-    Then open your browser at http://localhost:8501
+2. **Run the application**  
+```bash
+make dev
+```
 
-3. Run unit tests:
-    $ make test
+3. **Run unit tests**  
+```bash
+make test
+```
 
-4. Run linter (flake8):
-    $ make check
+5. **Run linter**  
+```bash
+make check
+```
+
+5. **Build the UI**  
+```bash
+make show
+```
+
 
 Note: If port 8501 is already used, change the port mapping in the Makefile.
 
@@ -96,10 +109,3 @@ COMING SOON
 - SSH-based remote file fetching from VLF stations
 - AI integration with real neural networks (1D CNN, RNN, etc.) and continuous inference
 - Export of detection results and logs
-
---------------------------------------------
-CONTACT
---------------------------------------------
-
-Developed by: Alessia Sollo
-
