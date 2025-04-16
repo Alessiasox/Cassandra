@@ -1,5 +1,5 @@
 import pytest
-from parser.parse_filenames import parse_filename
+from src.parser.parse_filenames import parse_filename
 from datetime import datetime
 
 def test_hi_res():

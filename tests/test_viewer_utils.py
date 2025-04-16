@@ -2,7 +2,7 @@
 
 import pytest
 from datetime import datetime, timedelta
-from viewer_utils import generate_timeline, closest_match
+from src.UI.viewer_utils import generate_timeline, closest_match
 
 def test_generate_simple():
     start = datetime(2023,1,1,0,0,0)
