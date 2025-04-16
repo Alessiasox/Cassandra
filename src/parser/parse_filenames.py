@@ -3,7 +3,8 @@
 import os
 import re
 from datetime import datetime
-from typing import Optional, Dict
+from typing import Dict, Optional
+
 
 def parse_filename(filename: str) -> Optional[Dict]:
     """
@@ -25,22 +26,22 @@ def parse_filename(filename: str) -> Optional[Dict]:
     # 2) resolution = LoRes or HiRes
     # 3) literal 't'
     # 4) underscore + dt_str (6-digit date + 'UTC' + 4–6 digit time)
-    pat = r'^([A-Za-z0-9]+)_(LoRes|HiRes)t_(\d{6}UTC\d{4,6})\.jpg$'
+    pat = r"^([A-Za-z0-9]+)_(LoRes|HiRes)t_(\d{6}UTC\d{4,6})\.jpg$"
     m = re.match(pat, base)
     if not m:
         return None
 
-    station = m.group(1)             # e.g. ExperimentalG4
-    resolution = m.group(2)          # "LoRes" or "HiRes"
-    dt_str = m.group(3)              # e.g. "180420UTC150040" or "180420UTC0100"
+    station = m.group(1)  # e.g. ExperimentalG4
+    resolution = m.group(2)  # "LoRes" or "HiRes"
+    dt_str = m.group(3)  # e.g. "180420UTC150040" or "180420UTC0100"
 
     # Split into date & time
-    date_part, time_part = dt_str.split('UTC')
+    date_part, time_part = dt_str.split("UTC")
     # date_part: 6 digits = ddmmyy
     dd = int(date_part[0:2])
     mm = int(date_part[2:4])
     yy = int(date_part[4:6])
-    year = 2000 + yy                 # Assuming all dates are in 21st century
+    year = 2000 + yy  # Assuming all dates are in 21st century
 
     # time_part: either HHMM (4 digits) or HHMMSS (6 digits)
     if len(time_part) == 4:
@@ -64,5 +65,5 @@ def parse_filename(filename: str) -> Optional[Dict]:
         "station": station,
         "resolution": resolution,
         "timestamp": ts,
-        "original_filename": base
+        "original_filename": base,
     }

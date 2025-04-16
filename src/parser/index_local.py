@@ -1,6 +1,7 @@
 import os
 from parser.parse_filenames import parse_filename
 
+
 def index_local_images(directory: str):
     """
     Scans the given directory for .jpg files,
@@ -23,14 +24,15 @@ def index_local_images(directory: str):
         parsed["full_path"] = full_path
         results.append(parsed)
         print(" --> Parsed and added.")
-    
+
     return results
+
 
 if __name__ == "__main__":
     # For quick testing, specify some local path
     test_dir = "/Users/alessiasollo/Desktop/Cassandra/VLF/LoRes"
     parsed_info_list = index_local_images(test_dir)
-    
+
     # Print some results
     for info in parsed_info_list[:10]:
         print(info)

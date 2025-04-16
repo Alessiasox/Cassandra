@@ -6,4 +6,6 @@ flake8
 matplotlib
 scipy
 plotly
+black
+isort
 # black, isort, mypy, etc.,

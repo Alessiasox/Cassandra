@@ -46,3 +46,19 @@ show: build
 		-e PYTHONPATH=/app/src \
 		$(IMAGE_NAME) \
 		streamlit run src/UI/viewer.py
+
+# 6) Clean up dangling images
+fix-format:
+	docker run --rm \
+		-v $(PWD):/app \
+		-w /app \
+		$(IMAGE_NAME) \
+		sh -c "black . && isort ."
+
+# 7) Stop all running containers
+stop:
+	docker stop $$(docker ps -q)
+	
+# 8) Remove all stopped containers
+clean:
+	docker rm $$(docker ps -a -q)

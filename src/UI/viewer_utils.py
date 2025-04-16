@@ -1,12 +1,11 @@
 # viewer_utils.py
 
 from datetime import datetime, timedelta
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
+
 
 def generate_timeline(
-    start_dt: datetime,
-    end_dt: datetime,
-    step_minutes: int
+    start_dt: datetime, end_dt: datetime, step_minutes: int
 ) -> List[datetime]:
     """
     Return a list of datetimes from start_dt to end_dt inclusive,
@@ -18,10 +17,8 @@ def generate_timeline(
     count = int(total_secs // (step_minutes * 60)) + 1
     return [start_dt + timedelta(minutes=step_minutes * i) for i in range(count)]
 
-def closest_match(
-    images: List[Dict],
-    target_dt: datetime
-) -> Optional[Dict]:
+
+def closest_match(images: List[Dict], target_dt: datetime) -> Optional[Dict]:
     """
     Given a list of dicts each with a 'timestamp' key (a datetime),
     return the dict whose timestamp is nearest to target_dt.
