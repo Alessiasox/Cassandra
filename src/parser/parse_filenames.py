@@ -19,7 +19,7 @@ def parse_filename(filename: str) -> Optional[Dict]:
         "timestamp": datetime(...),
         "original_filename": "..."
       }
-    or None if it doesn’t match.
+    or None if it doesn't match.
     """
     base = os.path.basename(filename)
     # 1) station = alphanumeric (e.g. ExperimentalG4)

@@ -12,7 +12,7 @@ from UI.viewer_utils import closest_match, generate_timeline
 
 # ───────── Page config ─────────
 st.set_page_config(page_title="INGV Cassandra Project", layout="wide")
-st.title("🛰️  INGV Cassandra Project")
+st.title("🛰️  INGV Cassandra Project")
 st.caption(
     """
 **Cassandra** is an internal visualization and analysis toolkit developed for the
@@ -29,7 +29,7 @@ Use the control panel on the left to configure your source folders, time ranges,
 )
 
 # ───────── Sidebar ─────────
-st.sidebar.header("Control Panel")
+st.sidebar.header("Control Panel")
 station = st.sidebar.selectbox("Station", ["ExperimentalG4"])
 src_folder = st.sidebar.text_input("Source Folder", "VLF/")
 mode = st.sidebar.radio(
@@ -116,12 +116,12 @@ ss.setdefault("logs", [])
 # ========== ACTIVE TIME WINDOW (depends on mode) ==========
 if mode == "Use slider":
     rng_start, rng_end = st.slider(
-        "Time window",
+        "Time window",
         min_value=timeline[0],
         max_value=timeline[-1],
         value=ss["range_slider"],
         step=timedelta(minutes=5),
-        format="YYYY‑MM‑DD HH:mm",
+        format="YYYY-MM-DD HH:mm",
         key="range_slider",
     )
     ss["lores_hour"] = rng_start.replace(minute=0, second=0, microsecond=0)
@@ -142,7 +142,7 @@ else:  # hour‑picker
 
     with col_l:
         st.button(
-            "◀ 1 h",
+            "◀ 1 h",
             help="Previous LoRes hour",
             use_container_width=True,
             disabled=ss["lores_hour"] == lo_hours[0],
@@ -163,7 +163,7 @@ else:  # hour‑picker
 
     with col_r:
         st.button(
-            "1 h ▶",
+            "1 h ▶",
             help="Next LoRes hour",
             use_container_width=True,
             disabled=ss["lores_hour"] == lo_hours[-1],
@@ -178,11 +178,11 @@ else:  # hour‑picker
 
 # mirror window
 st.sidebar.markdown(
-    f"**Window:** {rng_start.strftime('%H:%M')} – {rng_end.strftime('%H:%M')}"
+    f"**Window:** {rng_start.strftime('%H:%M')} - {rng_end.strftime('%H:%M')}"
 )
 
 # ───────── Tabs ─────────
-tab_spec, tab_wav, tab_logs = st.tabs(["📊 Spectrograms", "🔊 Waveform", "📜 Logs"])
+tab_spec, tab_wav, tab_logs = st.tabs(["📊 Spectrograms", "🔊 Waveform", "📜 Logs"])
 
 # ----------------- TAB 1: Spectrograms -----------------
 with tab_spec:
@@ -195,7 +195,7 @@ with tab_spec:
             st.image(
                 lo["full_path"],
                 use_container_width=True,
-                caption=lo["timestamp"].strftime("%Y-%m-%d %H:%M"),
+                caption=lo["timestamp"].strftime("%Y-%m-% %H:%M"),
             )
     else:
         lo_img = next(
@@ -211,7 +211,7 @@ with tab_spec:
             st.image(
                 lo_img["full_path"],
                 use_container_width=True,
-                caption=lo_img["timestamp"].strftime("%Y-%m-%d %H:%M"),
+                caption=lo_img["timestamp"].strftime("%Y-%m-%d %H:%M"),
             )
         else:
             st.warning("LoRes missing for that hour")
@@ -234,7 +234,7 @@ with tab_spec:
 
     hi_sel = [h for h in hires if hi_start <= h["timestamp"] < hi_end]
     st.subheader(
-        f"HiRes between {hi_start.strftime('%H:%M')} – {hi_end.strftime('%H:%M')}  ({len(hi_sel)})"
+        f"HiRes between {hi_start.strftime('%H:%M')} - {hi_end.strftime('%H:%M')}  ({len(hi_sel)})"
     )
     if hi_sel:
         cols = st.columns(4)
@@ -267,7 +267,7 @@ with tab_wav:
         fig.update_layout(
             height=300,
             margin=dict(l=0, r=0, t=10, b=40),
-            xaxis_title="Time (s)",
+            xaxis_title="Time (s)",
             yaxis_title="Amplitude",
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -281,15 +281,15 @@ with tab_wav:
         st.info("No .wav files available.")
 
     st.divider()
-    st.subheader("🤖  AI Inference (stub)")
-    model = st.selectbox("Model", ["1‑D CNN", "Simple RNN", "Transformer"])
-    if st.button("Run Inference"):
+    st.subheader("🤖 AI Inference (stub)")
+    model = st.selectbox("Model", ["1-D CNN", "Simple RNN", "Transformer"])
+    if st.button("Run Inference"):
         st.success("Finished (mock). Check Logs tab.")
         st.session_state.setdefault("logs", []).extend(
             [
-                f"🟢  {datetime.utcnow():%H:%M:%S} UTC — Started {model} inference",
-                "🟡  00:00:01 UTC — No peaks found (stub)",
-                "🟢  00:00:02 UTC — Finished inference (stub)",
+                f"🟢  {datetime.utcnow():%H:%M:%S} UTC — Started {model} inference",
+                "🟡  00:00:01 UTC — No peaks found (stub)",
+                "🟢  00:00:02 UTC — Finished inference (stub)",
             ]
         )
 
