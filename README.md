@@ -106,6 +106,7 @@ From the UI sidebar, users can:
 COMING SOON
 --------------------------------------------
 
+- Compare Stations for the same time
 - SSH-based remote file fetching from VLF stations
 - AI integration with real neural networks (1D CNN, RNN, etc.) and continuous inference
 - Export of detection results and logs
