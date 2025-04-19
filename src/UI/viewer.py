@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from scipy.io import wavfile
 
-from UI.viewer_utils import closest_match, generate_timeline
+from ui.viewer_utils import closest_match, generate_timeline
 
 # ───────── Page config ─────────
 st.set_page_config(page_title="INGV Cassandra Project", layout="wide")

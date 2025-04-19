@@ -8,4 +8,5 @@ scipy
 plotly
 black
 isort
+paramiko
 # black, isort, mypy, etc.,

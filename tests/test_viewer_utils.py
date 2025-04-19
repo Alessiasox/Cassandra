@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from UI.viewer_utils import closest_match, generate_timeline
+from ui.viewer_utils import closest_match, generate_timeline
 
 
 def test_generate_simple():
