@@ -1,90 +1,79 @@
 # src/ui/tabs/waveform.py
+import io
+from datetime import datetime
+from typing import List, Dict, Optional
 
-import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
+import streamlit as st
 from scipy.io import wavfile
-from datetime import datetime
+
 from ui.viewer_utils import closest_match
+from ssh.fetcher_remote import RemoteVLFClient
 
-# Original version (commented out) for reference:
-# def render_waveform_tab(wavs, rng_start, rng_end, ss):
-#     st.subheader("🔊 Waveform + AI Inference")
-#
-#     # filter to the selected window
-#     window = [w for w in wavs if rng_start <= w["timestamp"] <= rng_end]
-#     if not window:
-#         return st.info("No .wav files in this window.")
-#
-#     # pick the closest file to rng_start
-#     wav_file = closest_match(window, rng_start)
-#     st.markdown(f"**File:** `{wav_file['filename']}`")
-#
-#     # load and plot
-#     sr, data = wavfile.read(wav_file["path"])
-#     times = np.arange(len(data)) / sr
-#     fig = go.Figure(go.Scatter(x=times, y=data, line=dict(width=1)))
-#     fig.update_layout(
-#         height=300,
-#         margin=dict(l=0, r=0, t=10, b=40),
-#         xaxis_title="Time (s)",
-#         yaxis_title="Amplitude"
-#     )
-#     st.plotly_chart(fig, use_container_width=True)
-#     st.audio(wav_file["path"])
-#
-#     st.divider()
-#     st.subheader("🤖 AI Inference (stub)")
-#     model = st.selectbox("Model", ["1-D CNN","Simple RNN","Transformer"])
-#     if st.button("Run Inference"):
-#         now = datetime.utcnow().strftime("%H:%M:%S UTC")
-#         st.success("Inference complete (mock). See Logs.")
-#         ss["logs"].extend([
-#             f"🟢 {now} — Started {model}",
-#             "🟡 00:00:01 — No peaks found (stub)",
-#             "🟢 00:00:02 — Finished (stub)"
-#         ])
 
-def render_waveform_tab(wavs, rng_start, rng_end, ss):
+def render_waveform_tab(
+    wavs: List[Dict],
+    rng_start,
+    rng_end,
+    ss,
+    is_remote: bool = False,
+    client: Optional[RemoteVLFClient] = None,
+):
+    """
+    Display one waveform and the AI inference stub.
+
+    If `is_remote` the .wav is streamed with client.fetch_wav_bytes(path).
+    """
     st.subheader("🔊 Waveform + AI Inference")
 
-    # 1) Gather all WAVs in the selected window
+    # All wavs in window; choose the one closest to rng_start
     window = [w for w in wavs if rng_start <= w["timestamp"] <= rng_end]
+    wav_meta = closest_match(window, rng_start) if window else (wavs[0] if wavs else None)
 
-    # 2) Pick closest if any, otherwise fall back to the first available WAV
-    wav_file = (
-        closest_match(window, rng_start)
-        if window
-        else (wavs[0] if wavs else None)
-    )
+    if not wav_meta:
+        st.info("No .wav files in this window.")
+        _ai_stub(ss)           # still show the AI controls
+        return
 
-    # 3) Plot + play audio if we have a file
-    if wav_file:
-        st.markdown(f"**File:** `{wav_file['filename']}`")
-        sr, data = wavfile.read(wav_file["path"])
-        times = np.arange(len(data)) / sr
+    st.markdown(f"**File:** `{wav_meta['filename']}`")
 
-        fig = go.Figure(go.Scatter(x=times, y=data, line=dict(width=1)))
-        fig.update_layout(
-            height=300,
-            margin=dict(l=0, r=0, t=10, b=40),
-            xaxis_title="Time (s)",
-            yaxis_title="Amplitude"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        st.audio(wav_file["path"])
+    # ---------- Load audio ----------
+    if is_remote and client:
+        raw_bytes = client.fetch_wav_bytes(wav_meta["remote_path"])
+        sr, data  = wavfile.read(io.BytesIO(raw_bytes))
+        st.audio(raw_bytes, format="audio/wav")
     else:
-        st.info("No .wav files available.")
+        sr, data = wavfile.read(wav_meta["path"])
+        st.audio(wav_meta["path"])
 
-    # 4) Always show the AI‑stub section
+    # ---------- Plot ----------
+    t = np.arange(len(data)) / sr
+    fig = go.Figure(go.Scatter(x=t, y=data, line=dict(width=1)))
+    fig.update_layout(
+        height=300,
+        margin=dict(l=0, r=0, t=10, b=40),
+        xaxis_title="Time (s)",
+        yaxis_title="Amplitude",
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    _ai_stub(ss)
+
+
+# ----------------------------------------------------------------------
+def _ai_stub(ss):
+    """Simple AI inference mock that logs to session_state."""
     st.divider()
     st.subheader("🤖 AI Inference (stub)")
-    model = st.selectbox("Model", ["1-D CNN", "Simple RNN", "Transformer"])
+    model = st.selectbox("Model", ["1 D CNN", "Simple RNN", "Transformer"])
     if st.button("Run Inference"):
         now = datetime.utcnow().strftime("%H:%M:%S UTC")
-        st.success("Inference complete (mock). See Logs.")
-        ss["logs"].extend([
-            f"🟢 {now} — Started {model}",
-            "🟡 00:00:01 — No peaks found (stub)",
-            "🟢 00:00:02 — Finished (stub)"
-        ])
+        st.success("Inference complete (mock). See Logs tab.")
+        ss["logs"].extend(
+            [
+                f"🟢 {now} — Started {model}",
+                "🟡 00:00:01 — No peaks found (stub)",
+                "🟢 00:00:02 — Finished (stub)",
+            ]
+        )

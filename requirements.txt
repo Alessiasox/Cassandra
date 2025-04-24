@@ -8,5 +8,6 @@ scipy
 plotly
 black
 isort
-paramiko
+PyYAML
+dotenv
 # black, isort, mypy, etc.,

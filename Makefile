@@ -49,12 +49,14 @@ show: build
 	docker run -it --rm \
 		-v $(PWD):/app \
 		-v $(HOME)/.ssh:/root/.ssh:ro \
+		-v ${SSH_AUTH_SOCK}:/ssh-agent \
+		-e SSH_AUTH_SOCK=/ssh-agent \
 		-e HOME=/root \
 		-w /app \
 		-p 8501:8501 \
 		-e PYTHONPATH=/app/src \
 		$(IMAGE_NAME) \
-		streamlit run src/UI/viewer.py
+		streamlit run src/ui/main.py
 
 # 6) Format & sort imports
 fix-format:
