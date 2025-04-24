@@ -45,7 +45,7 @@ def render_spectrograms_tab(
     client:          Optional[RemoteVLFClient] = None,
 ) -> None:
     """Compact Spectrograms tab - local & SSH aware."""
-    st.subheader("📊 Spectrograms")
+    # st.subheader("📊 Spectrograms")
 
     # ── LoRes section ───────────────────────────────────────────────
     if control_mode == "Use slider":

@@ -1,6 +1,6 @@
 import streamlit as st
 from typing import List
-from datetime import datetime, date, time
+from datetime import datetime, date, timedelta
 
 
 _STATION_DEFAULTS = {
@@ -56,32 +56,47 @@ def select_station_folder_mode():
     return station, src_folder, mode
 
 
-def select_date_time(all_timestamps: List[datetime]) -> tuple[date, time, time]:
-    if not all_timestamps:
-        st.sidebar.error("No timestamps!")
-        return date.today(), time(0, 0), time(23, 59)
+def select_date_time(all_ts):
+    """
+    Calendar date-picker that *looks* free-form but snaps to the
+    closest available day if the user picks an empty one.
+    """
+    # all unique UTC dates that really exist
+    valid_days = sorted({ts.date() for ts in all_ts})
 
-    # 1) date dropdown limited to available days
-    available_dates = sorted({ts.date() for ts in all_timestamps})
-    sel_date = st.sidebar.selectbox("Date", available_dates, index=len(available_dates) - 1)
+    min_day, max_day = valid_days[0], valid_days[-1]
 
-    # 2) only times from that day
-    day_times = sorted({ts.time() for ts in all_timestamps if ts.date() == sel_date})
-    if not day_times:                               # shouldn’t happen now
-        st.sidebar.warning("No data for that day")
-        return sel_date, time(0, 0), time(0, 0)
+    # ── calendar widget
+    picked = st.sidebar.date_input(
+        "Date",
+        value=max_day,             # pre-select the latest
+        min_value=min_day,
+        max_value=max_day
+    )
 
-    # use <selectbox> instead of <time_input> so users can’t pick missing times
-    start_t = st.sidebar.selectbox("Start time", day_times, index=0,
-                                   format_func=lambda t: t.strftime("%H:%M"))
-    end_t   = st.sidebar.selectbox("End time",   day_times, index=len(day_times) - 1,
-                                   format_func=lambda t: t.strftime("%H:%M"))
+    # ── snap to nearest valid day if necessary
+    if picked not in valid_days:
+        # find the closest existing day
+        # (simple linear search – list is small)
+        nearest = min(valid_days, key=lambda d: abs(d - picked))
+        st.sidebar.warning(
+            f"No data for {picked:%Y-%m-%d}. "
+            f"Jumped to closest available day ({nearest:%Y-%m-%d}).",
+            icon="⚠️",
+        )
+        picked = nearest
 
-    # keep start ≤ end
-    if start_t > end_t:
-        start_t, end_t = end_t, start_t
+    # ── build the list of valid times *for that day* --------------
+    times_for_day = sorted({ts.time() for ts in all_ts if ts.date() == picked})
 
-    return sel_date, start_t, end_t
+    start_t = st.sidebar.time_input("Start Time", value=times_for_day[0])
+    end_t   = st.sidebar.time_input("End Time",   value=times_for_day[-1])
+
+    # guarantee chronological order
+    if start_t >= end_t:
+        end_t = (datetime.combine(date.min, start_t) + timedelta(minutes=5)).time()
+
+    return picked, start_t, end_t
 
 
 
