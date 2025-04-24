@@ -1,34 +1,29 @@
-# src/ui/main.py
-
 import os
-from datetime import datetime, timedelta
-from typing import List, Dict
-
-import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
 import streamlit as st
-from scipy.io import wavfile
-from PIL import Image
 
-from parser.index_local import index_local_images
-from ui.controls import (
-    select_station_folder_mode,
-    select_date_time,
-    render_download_buttons,
-)
-from ui.data_loading import load_images, load_wavs
-from ui.viewer_utils import generate_timeline, closest_match
-from ui.tabs.spectrograms import render_spectrograms_tab
-from ui.tabs.waveform import render_waveform_tab
-from ui.tabs.logs import render_logs_tab
-
-# ─────────── Page config ───────────
+# ─────────── Page config & Header ───────────
 st.set_page_config(
     page_title="INGV Cassandra Project",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="expanded"
 )
+
+
+from datetime import datetime, timedelta
+
+from ui.controls      import (
+    select_station_folder_mode,
+    select_date_time,
+    render_download_buttons
+)
+from ui.data_loading import (
+    load_data,
+)
+from ui.viewer_utils import generate_timeline, closest_match
+from ui.tabs.spectrograms import render_spectrograms_tab
+from ui.tabs.waveform     import render_waveform_tab
+from ui.tabs.logs         import render_logs_tab
+
 
 # ─────────── Title & Caption ───────────
 st.title("🛰️  INGV Cassandra Project")
@@ -51,12 +46,9 @@ def main():
     # ───────── Sidebar • Station/Folder/Mode ─────────
     station, src_folder, mode = select_station_folder_mode()
 
-    # ───────── Sidebar • Download Buttons ─────────
-    render_download_buttons()
 
     # ───────── Load & index data ─────────
-    lores, hires = load_images(src_folder, station)
-    wavs         = load_wavs(src_folder, station)
+    lores, hires, wavs, is_remote, client = load_data(station, src_folder)
     all_ts       = [item["timestamp"] for item in lores + hires + wavs]
     if not all_ts:
         st.error("No data found for this station/folder.")
@@ -64,6 +56,9 @@ def main():
 
     # ───────── Sidebar • Date & Time Pickers ─────────
     sel_date, start_t, end_t = select_date_time(all_ts)
+
+    # ───────── Sidebar • Download Buttons ─────────
+    render_download_buttons()
 
     # ───────── Session‑state Defaults ─────────
     ss = st.session_state
@@ -145,13 +140,14 @@ def main():
 
     with tab_spec:
         render_spectrograms_tab(
-            lores=lores,
-            hires=hires,
-            sel_date=sel_date,
-            mode=mode,
-            rng_start=rng_start,
-            rng_end=rng_end,
-            ss=ss
+            low_res_images  = lores,
+            high_res_images = hires,
+            control_mode    = mode,
+            window_start    = rng_start,
+            window_end      = rng_end,
+            session_state   = ss,
+            is_remote       = is_remote,
+            client          = client,
         )
 
     with tab_wav:
