@@ -1,9 +1,10 @@
 import os
 import yaml
-from datetime import datetime
+from datetime import datetime, timezone 
 from pathlib import Path
 from typing import List, Dict, Optional
 from dotenv import load_dotenv
+import streamlit as st
 
 from parser.index_local import index_local_images
 from ssh.fetcher_remote import RemoteVLFClient
@@ -48,7 +49,14 @@ def load_data(
         lores = client.list_images("LoRes")
         hires = client.list_images("HiRes")
         wavs  = client.list_wavs()
+
+        st.sidebar.caption(
+            f"Data range: {lores[0]['timestamp']:%Y-%m-%d} → "
+            f"{lores[-1]['timestamp']:%Y-%m-%d}"
+        )
+
         return lores, hires, wavs, True, client
+    
 
     # ─── Local fallback ───────────────────────────────────────────
     lo_dir = os.path.join(src_folder, "LoRes")
@@ -59,6 +67,7 @@ def load_data(
     lores = [img for img in lo if station in img["station"]]
     hires = [img for img in hi if station in img["station"]]
 
+
     # local WAVs
     wavs = []
     wav_dir = os.path.join(src_folder, "Wav")
@@ -68,7 +77,7 @@ def load_data(
                 p = os.path.join(wav_dir, fn)
                 wavs.append({
                     "path":      p,
-                    "timestamp": datetime.fromtimestamp(os.path.getmtime(p)),
+                    "timestamp": datetime.fromtimestamp(os.path.getmtime(p), tz=timezone.utc),
                     "filename":  fn
                 })
 

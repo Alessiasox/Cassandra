@@ -33,8 +33,21 @@ else
 		-w /app \
 		-e PYTHONPATH=/app/src \
 		$(IMAGE_NAME) \
-		pytest --maxfail=1 --disable-warnings -q
+		pytest -vvv --maxfail=1 --disable-warnings
 endif
+
+live-test:
+	docker run --rm \
+		-v $(PWD):/app \
+		-v $(HOME)/.ssh:/root/.ssh:ro \
+		-e HOME=/root \
+		-e PYTHONPATH=/app/src \
+		-e VLF_HOST=100.76.133.15 \
+		-e VLF_USER=User \
+		-e VLF_KEY_PATH=/root/.ssh/id_ed25519 \
+		-w /app \
+		$(IMAGE_NAME) \
+		pytest -vv tests/test_fetch_dates.py -s
 
 # 4) Lint check (e.g. flake8)
 check:

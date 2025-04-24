@@ -1,11 +1,15 @@
 # src/ssh/fetcher_remote.py
 
+from __future__ import annotations
+
 import io
 import os
+from datetime import datetime, timezone
+from typing import Dict, List
+
 import paramiko
-from typing import List, Dict
-from datetime import datetime
 from parser.parse_filenames import parse_filename
+
 
 class RemoteVLFClient:
     def __init__(
@@ -14,133 +18,136 @@ class RemoteVLFClient:
         port: int,
         username: str,
         key_path: str,
-        remote_base: str
+        remote_base: str,
     ):
         """
-        host        – remote SSH host
-        port        – SSH port (usually 22)
-        username    – SSH user
-        key_path    – path to your private key (Ed25519)
-        remote_base – root folder on remote (e.g. C:/htdocs/VLF)
+        host         remote SSH host
+        port         SSH port (usually 22)
+        username     SSH user
+        key_path     path to an *Ed25519* private key
+        remote_base  root folder on the remote (e.g. ``C:/htdocs/VLF``)
         """
-        self._host        = host
-        self._port        = port
-        self._username    = username
-        self._key_path    = os.path.expanduser(key_path)
-        # ensure remote paths use forward slashes
+        self._host = host
+        self._port = port
+        self._username = username
+        self._key_path = os.path.expanduser(key_path)
+        # always use forward slashes for SFTP paths
         self._remote_base = remote_base.replace("\\", "/")
-        self._client      = None
-        self._sftp        = None
 
-    def connect(self):
-        """Lazily open SSH and SFTP sessions."""
+        self._client: paramiko.SSHClient | None = None
+        self._sftp: paramiko.SFTPClient | None = None
+
+    # ------------------------------------------------------------------#
+    # connection helpers
+    # ------------------------------------------------------------------#
+    def connect(self) -> None:
+        """Open SSH + SFTP the first time they're needed."""
         if self._client:
             return
 
-        # load your private key
         key = paramiko.Ed25519Key.from_private_key_file(self._key_path)
 
-        # set up SSHClient
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-        # connect, allowing agent fallback
         client.connect(
-            hostname      = self._host,
-            port          = self._port,
-            username      = self._username,
-            pkey          = key,            # <-- use our loaded key
-            allow_agent   = True,
-            look_for_keys = True
+            hostname=self._host,
+            port=self._port,
+            username=self._username,
+            pkey=key,  # use our key
+            allow_agent=True,
+            look_for_keys=True,
         )
 
-        # open SFTP
         self._client = client
-        self._sftp   = client.open_sftp()
+        self._sftp = client.open_sftp()
 
-    def close(self):
-        """Cleanly close SFTP and SSH connections."""
+    def close(self) -> None:
+        """Close both channels."""
         if self._sftp:
             self._sftp.close()
         if self._client:
             self._client.close()
         self._sftp = self._client = None
 
+    # ------------------------------------------------------------------#
+    # images
+    # ------------------------------------------------------------------#
     def list_images(self, resolution: str) -> List[Dict]:
         """
-        List all .jpg files under <remote_base>/<resolution>,
-        parse their filenames, and return a list of metadata dicts:
+        Return metadata dicts for every ``*.jpg`` under
+        ``<remote_base>/<resolution>`` (LoRes or HiRes).
 
-            {
-              "station": ...,
-              "resolution": resolution,
-              "timestamp": datetime(...),
-              "remote_path": "C:/htdocs/VLF/HiRes/...",
-              "original_filename": "G1_HiResT_250410UTC144040.jpg"
-            }
+        All ``timestamp`` fields are **UTC-aware** ``datetime`` objects.
         """
         self.connect()
         remote_dir = f"{self._remote_base}/{resolution}"
-        out = []
+        images: list[Dict] = []
 
         for entry in self._sftp.listdir_attr(remote_dir):
-            # only .jpg
             if not entry.filename.lower().endswith(".jpg"):
                 continue
 
-            # parse out station, timestamp, etc.
+            # 1) try parsing from the filename
             info = parse_filename(entry.filename)
-            if not info:
-                continue
+            if info and info["timestamp"].tzinfo is None:
+                info["timestamp"] = info["timestamp"].replace(tzinfo=timezone.utc)
 
-            # override/add the fields we need
-            info["resolution"]     = resolution
-            info["remote_path"]    = f"{remote_dir}/{entry.filename}"
+            # 2) if parsing failed, fall back to the mtime
+            if info is None:
+                info = {
+                    "station": "UNKNOWN",
+                    "timestamp": datetime.fromtimestamp(
+                        entry.st_mtime, tz=timezone.utc
+                    ),
+                }
+
+            # common additions / overrides
+            info["resolution"] = resolution
+            info["remote_path"] = f"{remote_dir}/{entry.filename}"
             info["original_filename"] = entry.filename
-            # overwrite timestamp with the file’s actual mtime
-            info["timestamp"]      = datetime.fromtimestamp(entry.st_mtime)
 
-            out.append(info)
+            images.append(info)
 
-        # sort by timestamp ascending
-        return sorted(out, key=lambda x: x["timestamp"])
+        return sorted(images, key=lambda d: d["timestamp"])
 
     def fetch_image_bytes(self, remote_path: str) -> bytes:
-        """
-        Download a remote image into memory and return its raw bytes.
-        """
+        """Read a remote image into memory."""
         self.connect()
         buf = io.BytesIO()
-        # getfo writes file‐like into buf
         self._sftp.getfo(remote_path, buf)
         return buf.getvalue()
 
+    # ------------------------------------------------------------------#
+    # WAV audio
+    # ------------------------------------------------------------------#
     def list_wavs(self) -> List[Dict]:
         """
-        List all .wav files under <remote_base>/Wav,
-        returning metadata dicts with 'remote_path', 'filename', and 'timestamp'.
+        List every ``*.wav`` under ``<remote_base>/Wav``.
+
+        Returns UTC-aware ``timestamp`` fields.
         """
         self.connect()
         remote_dir = f"{self._remote_base}/Wav"
-        out = []
+        wavs: list[Dict] = []
 
         for entry in self._sftp.listdir_attr(remote_dir):
             if not entry.filename.lower().endswith(".wav"):
                 continue
 
-            path = f"{remote_dir}/{entry.filename}"
-            out.append({
-                "remote_path": path,
-                "filename":    entry.filename,
-                "timestamp":   datetime.fromtimestamp(entry.st_mtime)
-            })
+            wavs.append(
+                {
+                    "remote_path": f"{remote_dir}/{entry.filename}",
+                    "filename": entry.filename,
+                    "timestamp": datetime.fromtimestamp(
+                        entry.st_mtime, tz=timezone.utc
+                    ),
+                }
+            )
 
-        return sorted(out, key=lambda x: x["timestamp"])
+        return sorted(wavs, key=lambda x: x["timestamp"])
 
     def fetch_wav_bytes(self, remote_path: str) -> bytes:
-        """
-        Download a remote .wav into memory; return raw bytes.
-        """
+        """Read a remote WAV file into memory."""
         self.connect()
         buf = io.BytesIO()
         self._sftp.getfo(remote_path, buf)

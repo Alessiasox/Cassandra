@@ -1,10 +1,13 @@
 import streamlit as st
+from typing import List
+from datetime import datetime, date, time
+
 
 _STATION_DEFAULTS = {
     "ExperimentalG4": "VLF/",
-    "Duronia":        "VLF/Duronia/",
-    "ForcaCanapine":  "VLF/ForcaCanapine/",
-    "Grottaminarda":  "VLF/Grottaminarda/",
+    "Duronia":        "C:/htdocs/VLF",
+    "ForcaCanapine":  "C:/htdocs/VLF",
+    "Grottaminarda":  "C:/htdocs/VLF",
 }
 
 def select_station_folder_mode():
@@ -53,29 +56,33 @@ def select_station_folder_mode():
     return station, src_folder, mode
 
 
-def select_date_time(all_ts):
-    dates = sorted({ts.date() for ts in all_ts})
-    sel_date = st.sidebar.date_input(
-        "Date",
-        value=dates[0],
-        min_value=dates[0],
-        max_value=dates[-1],
-        key="sel_date"
-    )
+def select_date_time(all_timestamps: List[datetime]) -> tuple[date, time, time]:
+    if not all_timestamps:
+        st.sidebar.error("No timestamps!")
+        return date.today(), time(0, 0), time(23, 59)
 
-    times = sorted({ts.time() for ts in all_ts if ts.date() == sel_date})
-    start_t = st.sidebar.time_input(
-        "Start Time",
-        value=times[0],
-        key="start_t"
-    )
-    end_t = st.sidebar.time_input(
-        "End Time",
-        value=times[-1],
-        key="end_t"
-    )
+    # 1) date dropdown limited to available days
+    available_dates = sorted({ts.date() for ts in all_timestamps})
+    sel_date = st.sidebar.selectbox("Date", available_dates, index=len(available_dates) - 1)
+
+    # 2) only times from that day
+    day_times = sorted({ts.time() for ts in all_timestamps if ts.date() == sel_date})
+    if not day_times:                               # shouldn’t happen now
+        st.sidebar.warning("No data for that day")
+        return sel_date, time(0, 0), time(0, 0)
+
+    # use <selectbox> instead of <time_input> so users can’t pick missing times
+    start_t = st.sidebar.selectbox("Start time", day_times, index=0,
+                                   format_func=lambda t: t.strftime("%H:%M"))
+    end_t   = st.sidebar.selectbox("End time",   day_times, index=len(day_times) - 1,
+                                   format_func=lambda t: t.strftime("%H:%M"))
+
+    # keep start ≤ end
+    if start_t > end_t:
+        start_t, end_t = end_t, start_t
 
     return sel_date, start_t, end_t
+
 
 
 def render_download_buttons():

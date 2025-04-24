@@ -2,7 +2,7 @@
 
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Optional
 
 
@@ -57,7 +57,7 @@ def parse_filename(filename: str) -> Optional[Dict]:
         return None
 
     try:
-        ts = datetime(year, mm, dd, hh, mi, ss)
+        ts = datetime(year, mm, dd, hh, mi, ss, tzinfo=timezone.utc)
     except ValueError:
         return None
 

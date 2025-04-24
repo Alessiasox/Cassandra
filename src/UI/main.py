@@ -9,7 +9,7 @@ st.set_page_config(
 )
 
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from ui.controls      import (
     select_station_folder_mode,
@@ -26,7 +26,7 @@ from ui.tabs.logs         import render_logs_tab
 
 
 # ─────────── Title & Caption ───────────
-st.title("🛰️  INGV Cassandra Project")
+st.title("🛰️ INGV Cassandra Project")
 st.caption(
     """
 **Cassandra** is an internal visualization and analysis toolkit developed for the
@@ -62,8 +62,8 @@ def main():
 
     # ───────── Session‑state Defaults ─────────
     ss = st.session_state
-    dt0 = datetime.combine(sel_date, start_t)
-    dt1 = datetime.combine(sel_date, end_t)
+    dt0 = datetime.combine(sel_date, start_t, tzinfo=timezone.utc)
+    dt1 = datetime.combine(sel_date, end_t, tzinfo=timezone.utc)
     ss.setdefault("range_slider", (dt0, dt0 + timedelta(hours=1)))
     ss.setdefault("lores_hour",   dt0.replace(minute=0, second=0, microsecond=0))
     ss.setdefault("logs",         [])
@@ -93,13 +93,13 @@ def main():
             lo["timestamp"].replace(minute=0, second=0, microsecond=0)
             for lo in lores if lo["timestamp"].date() == sel_date
         })
-        if ss["lores_hour"] not in lo_hours:
-            ss["lores_hour"] = lo_hours[0]
+        # if ss["lores_hour"] not in lo_hours:
+        #     ss["lores_hour"] = lo_hours[0]
 
         col_l, col_m, col_r = st.columns([1,6,1], gap="small")
         with col_l:
             st.button(
-                "◀ 1 h earlier",
+                "◀ 1 h earlier",
                 disabled=ss["lores_hour"]==lo_hours[0],
                 on_click=lambda: ss.update(
                     lores_hour=lo_hours[lo_hours.index(ss["lores_hour"]) - 1]
@@ -117,7 +117,7 @@ def main():
             )
         with col_r:
             st.button(
-                "1 h later ▶",
+                "1 h later ▶",
                 disabled=ss["lores_hour"]==lo_hours[-1],
                 on_click=lambda: ss.update(
                     lores_hour=lo_hours[lo_hours.index(ss["lores_hour"]) + 1]
@@ -135,7 +135,7 @@ def main():
 
     # ───────── Tabs ─────────
     tab_spec, tab_wav, tab_logs = st.tabs(
-        ["📊 Spectrograms", "🔊 Waveform + AI", "📜 Logs"]
+        ["📊 Spectrograms", "🔊 Waveform + AI", "📜 Logs"]
     )
 
     with tab_spec:
@@ -152,10 +152,12 @@ def main():
 
     with tab_wav:
         render_waveform_tab(
-            wavs=wavs,
-            rng_start=rng_start,
-            rng_end=rng_end,
-            ss=ss
+            wavs        = wavs,
+            rng_start   = rng_start,
+            rng_end     = rng_end,
+            ss          = ss,
+            is_remote   = is_remote,   # <─ add these two lines
+            client      = client       # <─ so remote stations work too
         )
 
     with tab_logs:
