@@ -1,8 +1,5 @@
-# src/ui/tabs/waveform.py
-
-from __future__ import annotations
-
 import io
+import warnings
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
@@ -10,9 +7,12 @@ import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
 from scipy.io import wavfile
+from scipy.io.wavfile import WavFileWarning
 
 from ui.viewer_utils   import closest_match
 from ssh.fetcher_remote import RemoteVLFClient
+
+warnings.filterwarnings("ignore", category=WavFileWarning)
 
 
 def _load_wav(

@@ -10,4 +10,5 @@ black
 isort
 PyYAML
 dotenv
+psycopg2-binary>=2.9
 # black, isort, mypy, etc.,
